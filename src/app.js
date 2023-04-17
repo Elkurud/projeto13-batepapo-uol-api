@@ -132,7 +132,7 @@ app.get("/messages", async (req, res) => {
             { to: user },
             { from: user }
         ]}).limit(limit.limit || 0).toArray()
-    res.sendStatus(200)
+    res.status(200).send(messages)
 
   } catch (err) {
     res.status(500).send(err.message);

@@ -46,7 +46,7 @@ app.post("/participants", async (req, res) => {
       to: "Todos",
       text: "entra na sala...",
       type: "status",
-      time: dayjs().format(),
+      time: dayjs(Date.now()).format("HH:mm:ss"),
     });
     res.sendStatus(201);
   } catch (err) {
@@ -84,6 +84,9 @@ app.post("/messages", async (req, res) => {
   const validation = messageSchema.validate(newMessage);
   const formattedTime = dayjs(Date.now()).format("HH:mm:ss");
 
+  const exists = await db.collection("participants").findOne({ name: user })
+
+  if ( !exists ) return res.sendStatus(422)
 
   if (validation.error)     {
     const error = validation.error.details.message
@@ -129,7 +132,7 @@ app.get("/messages", async (req, res) => {
             { to: user },
             { from: user }
         ]}).limit(limit.limit || 0).toArray()
-    res.sendStatus(201)
+    res.sendStatus(200)
 
   } catch (err) {
     res.status(500).send(err.message);

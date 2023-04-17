@@ -137,11 +137,62 @@ app.get("/messages", async (req, res) => {
 });
 
 app.post("/status", async (req, res) => {
+
+    const { user } = req.headers
+
+    
+
+    if ( !user ) return res.sendStatus(404)
+
+    const exists = await db.collection("participants").findOne({ name: user })
+
+    if ( !exists ) return res.sendStatus(404)
+
+    await db.collection("participants").updateOne(
+        { name: user },
+        { $set: { lastStatus: Date.now() }}
+    )
+
+    res.sendStatus(200)
+
   try {
+
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
+
+setInterval(async () => {
+
+    const limitReach = Date.now() - 10000
+  
+    try {
+  
+      const afkUsers = await db.collection("participants")
+        .find({ lastStatus: { $lte: limitReach } }).toArray()
+  
+      if (afkUsers.length > 0) {
+        const afkMessages = afkUsers.map((participant) => {
+          return {
+            from: participant.name,
+            to: 'Todos',
+            text: 'sai da sala...',
+            type: 'status',
+            time: dayjs().format("HH:mm:ss")
+          }
+        })
+  
+        await db.collection("messages").insertMany(afkMessages)
+        await db.collection("participants").deleteMany(
+          { lastStatus: { $lte: limitReach } }
+        )
+      }
+  
+    } catch (error) {
+      res.sendStatus(500)
+    }
+  
+  }, 15000)
 
 const PORT = 5000;
 
